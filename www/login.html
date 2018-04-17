@@ -1,0 +1,92 @@
+<ons-page>
+  <p>
+    <ons-button modifier="large" id="setting">設定画面</ons-button>
+  </p>
+  <p>
+    <ons-button modifier="large" id="login">Facebook ログイン</ons-button>
+  </p>
+  <p>
+    <div id="loginStatus"></div>
+  </p>
+  <script>
+  ons.getScriptPage().onInit = function() {
+    let me = this;
+    // NCMBの初期化
+    let applicationKey = localStorage.getItem('applicationKey')
+    let clientKey = localStorage.getItem('clientKey')
+    if (applicationKey, clientKey) {
+      window.ncmb = new NCMB(applicationKey, clientKey);
+      const user = ncmb.User.getCurrentUser();
+      if (user) {
+        me.querySelector('#loginStatus').innerText = `ログイン完了：${user.objectId}`;
+      }
+    }
+    
+    // 設定画面への遷移
+    this.querySelector('#setting').onclick = (e) => {
+      document.querySelector('#nav').pushPage('setting.html');
+    }
+    
+    // ログインボタンを押した時の処理
+    this.querySelector('#login').onclick = (e) => {
+      let response;
+      openFB.init({
+        appId: localStorage.getItem('facebookAppId')
+      });
+      facebookLogin()
+        .then(authResponse => {
+          response = authResponse;
+          return facebookMyData();
+        }, err => console.error(err))
+        .then(user => {
+          return facebookLoginWithNCMB(response, user);
+        })
+        .then((user) => {
+          // ログイン完了
+          me.querySelector('#loginStatus').innerText = `ログイン完了：${user.objectId}`;
+        });
+    }
+  }
+  
+  // NCMBへFacebookの認証情報でログイン
+  const facebookLoginWithNCMB = (auth, user) => {
+    const expire_date = new Date(2592000 * 1000 + (new Date()).getTime()).toJSON();
+    const date = {
+      __type: "Date",
+      iso: expire_date
+    };
+    const authData = {
+      id: user.id,
+      access_token: auth.accessToken,
+      expiration_date: date
+    };
+    return ncmb.User.loginWith('facebook', authData);
+  };
+  
+  // FacebookのユーザIDを取得
+  const facebookMyData = () => {
+    return new Promise((res, rej) => {
+      openFB.api({
+        path: '/me',
+        success: function(user) {
+          res(user);
+        },
+        error: function(error) {
+          rej(error);
+        }
+      });
+    })
+  }
+  
+  // OpenFBによるFacebookログイン
+  const facebookLogin = () => {
+    return new Promise((res, rej) => {
+      openFB.login(function(response) {
+        return response.status === 'connected' ? 
+          res(response.authResponse) :
+          rej(response);
+      }, {scope: 'email'});
+    })
+  }
+  </script>
+</ons-page>

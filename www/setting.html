@@ -1,0 +1,39 @@
+<ons-page>
+  <p>
+    <ons-button modifier="large" id="back">戻る</ons-button>
+  </p>
+  <p>
+    <ons-input id="applicationKey" modifier="underbar" placeholder="アプリケーションキー" float></ons-input>
+  </p>
+  <p>
+    <ons-input id="clientKey" modifier="underbar" placeholder="クライアントキー" float></ons-input>
+  </p>
+  <p>
+    <ons-input id="facebookAppId" modifier="underbar" placeholder="FacebookアプリID" float></ons-input>
+  </p>
+  <p>
+    <ons-button id="save">保存</ons-button>
+  </p>
+  <script>
+    const settings = ['applicationKey', 'clientKey', 'facebookAppId'];
+    ons.getScriptPage().onShow = function() {
+      for (let setting of settings) {
+        document.querySelector(`#${setting}`).value = localStorage.getItem(setting);
+      }
+    },
+    ons.getScriptPage().onInit = function() {
+      this.querySelector('#back').onclick = (e) => {
+        document.querySelector('#nav').popPage();
+      }
+      this.querySelector('#save').onclick = (e) => {
+        for (let setting of settings) {
+          localStorage.setItem(setting, document.querySelector(`#${setting}`).value);
+        }
+        if (!window.ncmb) {
+          window.ncmb = new NCMB(localStorage.getItem('applicationKey'), localStorage.getItem('clientKey'));
+        }
+        document.querySelector('#nav').popPage();
+      }
+    }
+  </script>
+</ons-page>
